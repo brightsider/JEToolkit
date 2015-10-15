@@ -423,26 +423,15 @@ static const NSTimeInterval JEHUDLogFrameCoalescingInterval = 0.5;
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    static UITableViewCell *dummyCell;
-    if (!dummyCell) {
-        
-        dummyCell = [self cellForIndexPath:nil];
-    }
+    CGSize textSize = { CGRectGetWidth(tableView.bounds) - 30, CGFLOAT_MAX };
+    NSString *text = self.displayedLogEntries[indexPath.row];
+    CGRect frame = [text boundingRectWithSize:textSize
+                                      options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                   attributes:@{NSFontAttributeName:[UIFont fontWithName:@"Courier" size:10.0f]}
+                                      context:nil];
+    CGFloat height = frame.size.height;
     
-    dummyCell.frame = (CGRect){
-        .size.width = CGRectGetWidth(tableView.bounds),
-        .size.height = tableView.rowHeight
-    };
-    
-    UILabel *textLabel = dummyCell.textLabel;
-    textLabel.text = self.displayedLogEntries[indexPath.row];
-    [dummyCell layoutIfNeeded];
-    
-    return ceilf((CGRectGetHeight(dummyCell.bounds)
-                  - CGRectGetHeight(textLabel.frame)
-                  + [textLabel sizeForText].height
-                  + JEUITableViewSeparatorWidth
-                  + (JEHUDLogViewConsolePadding * 2.0f)));
+    return height;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -758,12 +747,13 @@ static const NSTimeInterval JEHUDLogFrameCoalescingInterval = 0.5;
                                      >= truncf(tableView.contentSize.height - CGRectGetHeight(scrollBounds))));
     [tableView reloadData];
     
-    if (shouldScrollToBottom) {
+    if (shouldScrollToBottom && [self.displayedLogEntries count] > 0) {
         
-        [tableView
+        [tableView setContentOffset:CGPointMake(0, tableView.contentSize.height - CGRectGetHeight(tableView.frame))];
+        /*[tableView
          scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:([self.displayedLogEntries count] - 1) inSection:0]
          atScrollPosition:UITableViewScrollPositionBottom
-         animated:NO];
+         animated:NO];*/
     }
     [tableView flashScrollIndicators];
     self.lastReloadTimeInterval = [NSDate timeIntervalSinceReferenceDate];
